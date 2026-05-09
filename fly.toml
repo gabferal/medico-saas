@@ -1,4 +1,4 @@
-app = "mi-consultorio-py"
+app = "medico-saas"
 primary_region = "gru"  # São Paulo, el más cercano a Paraguay
 
 [build]
