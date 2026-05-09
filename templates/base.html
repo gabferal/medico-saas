@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Mi Consultorio{% endblock %}</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  {% block head %}{% endblock %}
+  <style>
+    /* Scrollbar personalizado */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #f1f5f9; }
+    ::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 3px; }
+    /* Transición suave en el sidebar */
+    #sidebar { transition: transform 0.28s cubic-bezier(.4,0,.2,1); }
+    /* Clases Tailwind personalizadas para formularios */
+    .label-form { @apply block text-sm font-medium text-gray-700 mb-1; }
+    .input-form { @apply w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm outline-none transition focus:ring-2 focus:ring-teal-500 focus:border-teal-500; }
+  </style>
+</head>
+<body class="bg-slate-50 min-h-screen font-sans text-gray-900">
+
+  <!-- ─── HEADER MOBILE ─── -->
+  <header class="bg-teal-700 text-white px-4 py-3.5 flex items-center justify-between lg:hidden fixed top-0 left-0 right-0 z-30 shadow-md">
+    <div class="flex items-center gap-2">
+      <span class="text-2xl">🏥</span>
+      <span class="font-bold text-lg tracking-tight">Mi Consultorio</span>
+    </div>
+    <button onclick="toggleMenu()" class="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-teal-600 transition">
+      <i class="fas fa-bars text-lg"></i>
+    </button>
+  </header>
+
+  <div class="flex pt-14 lg:pt-0">
+
+    <!-- ─── SIDEBAR ─── -->
+    <aside id="sidebar"
+      class="fixed inset-y-0 left-0 z-40 w-64 bg-teal-800 text-white -translate-x-full lg:translate-x-0 flex flex-col shadow-xl">
+
+      <!-- Logo desktop -->
+      <div class="px-5 py-6 hidden lg:flex items-center gap-3 border-b border-teal-700">
+        <span class="text-3xl">🏥</span>
+        <div>
+          <div class="font-bold text-lg leading-tight">Mi Consultorio</div>
+          <div class="text-teal-300 text-xs">Sistema de Gestión Médica</div>
+        </div>
+      </div>
+
+      <!-- Botón cierre mobile -->
+      <div class="flex items-center justify-between px-4 py-4 lg:hidden border-b border-teal-700">
+        <span class="font-semibold">Menú</span>
+        <button onclick="toggleMenu()" class="text-teal-300 hover:text-white">
+          <i class="fas fa-times text-xl"></i>
+        </button>
+      </div>
+
+      <!-- Navegación -->
+      <nav class="flex-1 py-4 px-3 space-y-1 overflow-y-auto">
+        {% set path = request.url.path %}
+
+        <a href="/dashboard" onclick="toggleMenu()"
+          class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all
+          {% if path == '/dashboard' %}bg-teal-600 shadow-inner{% else %}hover:bg-teal-700 text-teal-100{% endif %}">
+          <i class="fas fa-chart-pie w-5 text-center"></i>
+          <span class="font-medium">Panel principal</span>
+        </a>
+
+        <a href="/pacientes" onclick="toggleMenu()"
+          class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all
+          {% if path == '/pacientes' %}bg-teal-600 shadow-inner{% else %}hover:bg-teal-700 text-teal-100{% endif %}">
+          <i class="fas fa-users w-5 text-center"></i>
+          <span class="font-medium">Pacientes</span>
+        </a>
+
+        <a href="/agenda" onclick="toggleMenu()"
+          class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all
+          {% if path == '/agenda' %}bg-teal-600 shadow-inner{% else %}hover:bg-teal-700 text-teal-100{% endif %}">
+          <i class="fas fa-calendar-alt w-5 text-center"></i>
+          <span class="font-medium">Agenda</span>
+        </a>
+
+        <a href="/contabilidad" onclick="toggleMenu()"
+          class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all
+          {% if path == '/contabilidad' %}bg-teal-600 shadow-inner{% else %}hover:bg-teal-700 text-teal-100{% endif %}">
+          <i class="fas fa-coins w-5 text-center"></i>
+          <span class="font-medium">Contabilidad</span>
+        </a>
+      </nav>
+
+      <!-- Footer del sidebar -->
+      <div class="p-4 border-t border-teal-700">
+        <button onclick="cerrarSesion()"
+          class="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-teal-200 hover:text-white hover:bg-teal-700 transition text-sm">
+          <i class="fas fa-sign-out-alt w-5 text-center"></i>
+          <span>Cerrar sesión</span>
+        </button>
+      </div>
+    </aside>
+
+    <!-- Overlay mobile -->
+    <div id="overlay" class="hidden fixed inset-0 bg-black/40 z-30 backdrop-blur-sm lg:hidden"
+      onclick="toggleMenu()"></div>
+
+    <!-- ─── CONTENIDO PRINCIPAL ─── -->
+    <main class="flex-1 lg:ml-64 min-h-screen p-4 lg:p-8 overflow-x-hidden">
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+
+  <!-- ─── SCRIPT GLOBAL ─── -->
+  <script>
+    // ── Verificar autenticación ──────────────────────────────────────────────
+   /* (function checkAuth() {
+      const path = window.location.pathname;
+      if (path === '/' || path === '/login') return;
+      const hasToken = document.cookie.split(';').some(c => c.trim().startsWith('access_token='));
+      if (!hasToken) window.location.href = '/';
+    })();
+*/
+    // ── API helper (incluye cookie automáticamente) ──────────────────────────
+    async function api(url, opts = {}) {
+      try {
+        const res = await fetch(url, {
+          ...opts,
+          headers: { 'Content-Type': 'application/json', ...(opts.headers || {}) },
+          credentials: 'include',
+        });
+        if (res.status === 401) { window.location.href = '/'; return null; }
+        return res;
+      } catch (e) {
+        console.error('Error de red:', e);
+        return null;
+      }
+    }
+
+    // ── Cerrar sesión ────────────────────────────────────────────────────────
+    async function cerrarSesion() {
+      await api('/api/auth/logout/', { method: 'POST' });
+      window.location.href = '/';
+    }
+
+    // ── Toggle menú lateral (mobile) ─────────────────────────────────────────
+    function toggleMenu() {
+      const sidebar = document.getElementById('sidebar');
+      const overlay = document.getElementById('overlay');
+      const open = !sidebar.classList.contains('-translate-x-full');
+      sidebar.classList.toggle('-translate-x-full', open);
+      sidebar.classList.toggle('translate-x-0', !open);
+      overlay.classList.toggle('hidden', open);
+    }
+
+    // ── Formato de moneda guaraní ────────────────────────────────────────────
+    function formatoPYG(n) {
+      return '₲\u202F' + Math.round(Number(n)).toLocaleString('es-PY');
+    }
+
+    // ── Formato de fecha ─────────────────────────────────────────────────────
+    function formatFecha(f) {
+      if (!f) return '—';
+      const d = new Date(f + 'T00:00:00');
+      return d.toLocaleDateString('es-PY', { day: '2-digit', month: 'long', year: 'numeric' });
+    }
+  </script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

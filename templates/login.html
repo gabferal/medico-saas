@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ingresar — Mi Consultorio</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <style>
+    body {
+      background: linear-gradient(135deg, #0f766e 0%, #0e7490 60%, #1e3a5f 100%);
+    }
+    .card-entrada {
+      animation: slideUp .4s cubic-bezier(.22,.68,0,1.2) both;
+    }
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(24px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    input:focus { outline: none; box-shadow: 0 0 0 3px rgba(13,148,136,0.25); border-color: #0d9488; }
+  </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4">
+
+  <div class="card-entrada bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+
+    <!-- Encabezado -->
+    <div class="bg-teal-700 px-8 py-8 text-center text-white">
+      <div class="text-5xl mb-3">🏥</div>
+      <h1 class="text-2xl font-bold tracking-tight">Mi Consultorio</h1>
+      <p class="text-teal-200 text-sm mt-1">Sistema de Gestión Médica · Paraguay</p>
+    </div>
+
+    <!-- Formulario -->
+    <div class="px-8 py-8 space-y-5">
+
+      <div id="alerta-error"
+        class="hidden flex items-center gap-3 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm">
+        <i class="fas fa-exclamation-circle flex-shrink-0"></i>
+        <span id="mensaje-error">Correo o contraseña incorrectos.</span>
+      </div>
+
+      <div>
+        <label class="block text-sm font-semibold text-gray-700 mb-2">
+          <i class="fas fa-envelope text-teal-500 mr-2"></i>Correo electrónico
+        </label>
+        <input id="email" type="email" placeholder="doctor@ejemplo.com" autocomplete="email"
+          class="w-full border border-gray-300 rounded-xl px-4 py-3 text-gray-800 transition">
+      </div>
+
+      <div>
+        <label class="block text-sm font-semibold text-gray-700 mb-2">
+          <i class="fas fa-lock text-teal-500 mr-2"></i>Contraseña
+        </label>
+        <div class="relative">
+          <input id="password" type="password" placeholder="••••••••" autocomplete="current-password"
+            class="w-full border border-gray-300 rounded-xl px-4 py-3 pr-12 text-gray-800 transition"
+            onkeydown="if(event.key==='Enter') ingresar()">
+          <button type="button" onclick="togglePassword()"
+            class="absolute right-4 top-3.5 text-gray-400 hover:text-gray-600">
+            <i id="ojo" class="fas fa-eye"></i>
+          </button>
+        </div>
+      </div>
+
+      <button id="btn-ingresar" onclick="ingresar()"
+        class="w-full bg-teal-600 hover:bg-teal-700 active:bg-teal-800 text-white font-bold py-3.5 rounded-xl transition-all duration-200 flex items-center justify-center gap-2">
+        <i class="fas fa-sign-in-alt"></i>
+        <span>Ingresar al sistema</span>
+      </button>
+    </div>
+
+    <div class="px-8 pb-6 text-center text-xs text-gray-400">
+      Sistema de uso exclusivo del médico titular · v1.0
+    </div>
+  </div>
+
+  <script>
+    // Si ya tiene sesión, redirigir
+    if (document.cookie.split(';').some(c => c.trim().startsWith('access_token='))) {
+      window.location.href = '/dashboard';
+    }
+
+    function togglePassword() {
+      const input = document.getElementById('password');
+      const ojo = document.getElementById('ojo');
+      if (input.type === 'password') {
+        input.type = 'text';
+        ojo.className = 'fas fa-eye-slash';
+      } else {
+        input.type = 'password';
+        ojo.className = 'fas fa-eye';
+      }
+    }
+
+    async function ingresar() {
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value;
+      const btn = document.getElementById('btn-ingresar');
+      const alerta = document.getElementById('alerta-error');
+
+      if (!email || !password) {
+        document.getElementById('mensaje-error').textContent = 'Complete todos los campos.';
+        alerta.classList.remove('hidden');
+        return;
+      }
+
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span>Verificando...</span>';
+      alerta.classList.add('hidden');
+
+      try {
+        const res = await fetch('/api/auth/login/', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password }),
+          credentials: 'include',
+        });
+
+        if (res.ok) {
+          btn.innerHTML = '<i class="fas fa-check"></i><span>¡Bienvenido!</span>';
+          btn.className = btn.className.replace('bg-teal-600 hover:bg-teal-700', 'bg-emerald-600');
+          setTimeout(() => window.location.href = '/dashboard', 400);
+        } else {
+          const data = await res.json();
+          document.getElementById('mensaje-error').textContent = data.detail || 'Correo o contraseña incorrectos.';
+          alerta.classList.remove('hidden');
+          btn.disabled = false;
+          btn.innerHTML = '<i class="fas fa-sign-in-alt"></i><span>Ingresar al sistema</span>';
+        }
+      } catch (e) {
+        document.getElementById('mensaje-error').textContent = 'Error de conexión. Intente nuevamente.';
+        alerta.classList.remove('hidden');
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-sign-in-alt"></i><span>Ingresar al sistema</span>';
+      }
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,194 @@
+{% extends "base.html" %}
+{% block title %}Panel Principal{% endblock %}
+{% block head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="mb-6">
+  <h1 class="text-2xl font-bold text-gray-800">Panel Principal</h1>
+  <p id="saludo" class="text-gray-500 text-sm mt-1">Cargando...</p>
+</div>
+
+<!-- KPIs -->
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-7">
+  <div class="bg-white rounded-xl shadow-sm p-5 border border-gray-100">
+    <div class="flex items-center justify-between mb-3">
+      <span class="text-gray-400 text-sm">Pacientes activos</span>
+      <span class="w-9 h-9 rounded-lg bg-teal-50 flex items-center justify-center text-teal-600">
+        <i class="fas fa-users"></i>
+      </span>
+    </div>
+    <div id="kpi-pacientes" class="text-3xl font-bold text-gray-800">—</div>
+    <div id="kpi-nuevos" class="text-xs text-teal-600 mt-1"></div>
+  </div>
+
+  <div class="bg-white rounded-xl shadow-sm p-5 border border-gray-100">
+    <div class="flex items-center justify-between mb-3">
+      <span class="text-gray-400 text-sm">Citas de hoy</span>
+      <span class="w-9 h-9 rounded-lg bg-blue-50 flex items-center justify-center text-blue-500">
+        <i class="fas fa-calendar-day"></i>
+      </span>
+    </div>
+    <div id="kpi-citas-hoy" class="text-3xl font-bold text-gray-800">—</div>
+    <a href="/agenda" class="text-xs text-blue-500 mt-1 block hover:underline">Ver agenda →</a>
+  </div>
+
+  <div class="bg-white rounded-xl shadow-sm p-5 border border-gray-100">
+    <div class="flex items-center justify-between mb-3">
+      <span class="text-gray-400 text-sm">Ingresos del mes</span>
+      <span class="w-9 h-9 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-600">
+        <i class="fas fa-coins"></i>
+      </span>
+    </div>
+    <div id="kpi-ingresos" class="text-xl font-bold text-gray-800">—</div>
+    <a href="/contabilidad" class="text-xs text-emerald-600 mt-1 block hover:underline">Ver contabilidad →</a>
+  </div>
+
+  <div class="bg-white rounded-xl shadow-sm p-5 border border-gray-100">
+    <div class="flex items-center justify-between mb-3">
+      <span class="text-gray-400 text-sm">Nuevos este mes</span>
+      <span class="w-9 h-9 rounded-lg bg-purple-50 flex items-center justify-center text-purple-500">
+        <i class="fas fa-user-plus"></i>
+      </span>
+    </div>
+    <div id="kpi-nuevos-num" class="text-3xl font-bold text-gray-800">—</div>
+    <a href="/pacientes" class="text-xs text-purple-500 mt-1 block hover:underline">Ver pacientes →</a>
+  </div>
+</div>
+
+<!-- Gráficos -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-5 mb-5">
+  <div class="lg:col-span-2 bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+    <h2 class="font-semibold text-gray-700 mb-4">Consultas realizadas por mes</h2>
+    <div class="relative" style="height: 220px">
+      <canvas id="grafico-consultas"></canvas>
+      <div id="no-consultas" class="hidden absolute inset-0 flex items-center justify-center text-gray-400 text-sm">
+        Sin datos de consultas aún
+      </div>
+    </div>
+  </div>
+
+  <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+    <h2 class="font-semibold text-gray-700 mb-4">Distribución por edad</h2>
+    <div class="relative" style="height: 220px">
+      <canvas id="grafico-edad"></canvas>
+      <div id="no-edad" class="hidden absolute inset-0 flex items-center justify-center text-gray-400 text-sm">
+        Sin datos
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Accesos rápidos -->
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+  <a href="/pacientes" class="bg-white rounded-xl shadow-sm p-5 border border-gray-100 hover:border-teal-300 hover:shadow transition flex items-center gap-4 group">
+    <div class="w-12 h-12 rounded-xl bg-teal-50 group-hover:bg-teal-100 flex items-center justify-center text-teal-600 text-xl transition">
+      <i class="fas fa-user-plus"></i>
+    </div>
+    <div>
+      <div class="font-semibold text-gray-800">Registrar paciente</div>
+      <div class="text-xs text-gray-500">Agregar nuevo paciente</div>
+    </div>
+  </a>
+  <a href="/agenda" class="bg-white rounded-xl shadow-sm p-5 border border-gray-100 hover:border-blue-300 hover:shadow transition flex items-center gap-4 group">
+    <div class="w-12 h-12 rounded-xl bg-blue-50 group-hover:bg-blue-100 flex items-center justify-center text-blue-500 text-xl transition">
+      <i class="fas fa-calendar-plus"></i>
+    </div>
+    <div>
+      <div class="font-semibold text-gray-800">Agendar cita</div>
+      <div class="text-xs text-gray-500">Ir al calendario</div>
+    </div>
+  </a>
+  <a href="/contabilidad" class="bg-white rounded-xl shadow-sm p-5 border border-gray-100 hover:border-emerald-300 hover:shadow transition flex items-center gap-4 group">
+    <div class="w-12 h-12 rounded-xl bg-emerald-50 group-hover:bg-emerald-100 flex items-center justify-center text-emerald-600 text-xl transition">
+      <i class="fas fa-file-invoice-dollar"></i>
+    </div>
+    <div>
+      <div class="font-semibold text-gray-800">Registrar ingreso</div>
+      <div class="text-xs text-gray-500">Ir a contabilidad</div>
+    </div>
+  </a>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function cargarDashboard() {
+  const res = await api('/api/dashboard/');
+  if (!res) return;
+  const d = await res.json();
+
+  // KPIs
+  document.getElementById('kpi-pacientes').textContent = d.total_pacientes;
+  document.getElementById('kpi-citas-hoy').textContent = d.citas_hoy;
+  document.getElementById('kpi-ingresos').textContent = formatoPYG(d.ingresos_mes);
+  document.getElementById('kpi-nuevos-num').textContent = d.pacientes_este_mes;
+  document.getElementById('kpi-nuevos').textContent =
+    d.pacientes_este_mes === 1 ? '1 nuevo este mes' : `${d.pacientes_este_mes} nuevos este mes`;
+
+  // Saludo dinámico
+  const hora = new Date().getHours();
+  const saludo = hora < 12 ? 'Buenos días' : hora < 19 ? 'Buenas tardes' : 'Buenas noches';
+  document.getElementById('saludo').textContent =
+    `${saludo} · ${new Date().toLocaleDateString('es-PY', { weekday: 'long', day: 'numeric', month: 'long' })}`;
+
+  // Gráfico de barras - consultas por mes
+  if (d.consultas_por_mes.length) {
+    new Chart(document.getElementById('grafico-consultas'), {
+      type: 'bar',
+      data: {
+        labels: d.consultas_por_mes.map(r => r.mes),
+        datasets: [{
+          label: 'Consultas',
+          data: d.consultas_por_mes.map(r => r.consultas),
+          backgroundColor: '#0d9488',
+          borderRadius: 6,
+          borderSkipped: false,
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          y: { beginAtZero: true, ticks: { stepSize: 1 }, grid: { color: '#f3f4f6' } },
+          x: { grid: { display: false } },
+        },
+      }
+    });
+  } else {
+    document.getElementById('no-consultas').classList.remove('hidden');
+  }
+
+  // Gráfico de dona - distribución por edad
+  const edades = d.distribucion_edad;
+  const totalEdad = Object.values(edades).reduce((a, b) => a + b, 0);
+  if (totalEdad > 0) {
+    new Chart(document.getElementById('grafico-edad'), {
+      type: 'doughnut',
+      data: {
+        labels: ['0-17 años', '18-35 años', '36-59 años', '60+ años'],
+        datasets: [{
+          data: Object.values(edades),
+          backgroundColor: ['#5eead4', '#38bdf8', '#818cf8', '#fb923c'],
+          borderWidth: 0,
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { position: 'bottom', labels: { font: { size: 11 }, padding: 12 } },
+        },
+        cutout: '65%',
+      }
+    });
+  } else {
+    document.getElementById('no-edad').classList.remove('hidden');
+  }
+}
+
+cargarDashboard();
+</script>
+{% endblock %}

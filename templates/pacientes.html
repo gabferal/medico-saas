@@ -1,0 +1,521 @@
+{% extends "base.html" %}
+{% block title %}Pacientes{% endblock %}
+
+{% block content %}
+<div class="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-3">
+  <h1 class="text-2xl font-bold text-gray-800">Pacientes</h1>
+  <button onclick="abrirModal()"
+    class="bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2 transition">
+    <i class="fas fa-plus"></i> Nuevo Paciente
+  </button>
+</div>
+
+<!-- Buscador -->
+<div class="bg-white rounded-xl shadow p-4 mb-5">
+  <div class="relative">
+    <i class="fas fa-search absolute left-3 top-3.5 text-gray-400"></i>
+    <input id="buscador" type="text" placeholder="Buscar por nombre o cédula..."
+      oninput="buscarPacientes(this.value)"
+      class="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none">
+  </div>
+</div>
+
+<!-- Lista de pacientes -->
+<div class="bg-white rounded-xl shadow overflow-hidden">
+  <div class="hidden md:grid grid-cols-5 px-5 py-3 bg-gray-50 border-b text-xs font-semibold text-gray-500 uppercase tracking-wider">
+    <div class="col-span-2">Nombre</div>
+    <div>Documento</div>
+    <div>Teléfono</div>
+    <div class="text-right">Acciones</div>
+  </div>
+  <div id="lista-pacientes" class="divide-y divide-gray-100">
+    <div class="p-8 text-center text-gray-400">
+      <i class="fas fa-spinner fa-spin text-2xl"></i>
+      <div class="mt-2">Cargando pacientes...</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     MODAL: CREAR / EDITAR PACIENTE
+════════════════════════════════════════════ -->
+<div id="modal-paciente" class="fixed inset-0 bg-black/50 z-50 hidden flex items-start justify-center p-4 pt-10 overflow-y-auto">
+  <div class="bg-white rounded-2xl w-full max-w-2xl shadow-2xl my-4">
+    <div class="flex items-center justify-between p-5 border-b">
+      <h2 id="modal-titulo" class="text-lg font-bold text-gray-800">Nuevo Paciente</h2>
+      <button onclick="cerrarModal()" class="text-gray-400 hover:text-gray-600 text-xl"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="p-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <input type="hidden" id="pac-id">
+      <div class="sm:col-span-2">
+        <label class="label-f">Nombre completo *</label>
+        <input id="pac-nombre" type="text" placeholder="Ej: María García Rodríguez" class="input-f">
+      </div>
+      <div>
+        <label class="label-f">Tipo de documento</label>
+        <select id="pac-tipo-doc" class="input-f">
+          <option value="cedula_py">Cédula paraguaya</option>
+          <option value="rg_br">RG (Brasil)</option>
+          <option value="cpf_br">CPF (Brasil)</option>
+          <option value="pasaporte">Pasaporte</option>
+        </select>
+      </div>
+      <div>
+        <label class="label-f">Número de documento</label>
+        <input id="pac-doc" type="text" placeholder="Ej: 4.567.890" class="input-f">
+      </div>
+      <div>
+        <label class="label-f">Fecha de nacimiento</label>
+        <input id="pac-fnac" type="date" class="input-f">
+      </div>
+      <div>
+        <label class="label-f">Sexo</label>
+        <select id="pac-sexo" class="input-f">
+          <option value="">— Seleccionar —</option>
+          <option value="Masculino">Masculino</option>
+          <option value="Femenino">Femenino</option>
+          <option value="Otro">Otro</option>
+        </select>
+      </div>
+      <div>
+        <label class="label-f">Teléfono</label>
+        <input id="pac-tel" type="tel" placeholder="0981-456789" class="input-f">
+      </div>
+      <div>
+        <label class="label-f">Correo electrónico</label>
+        <input id="pac-email" type="email" placeholder="correo@ejemplo.com" class="input-f">
+      </div>
+      <div class="sm:col-span-2">
+        <label class="label-f">Dirección</label>
+        <input id="pac-dir" type="text" placeholder="Calle, número, barrio" class="input-f">
+      </div>
+      <div>
+        <label class="label-f">Ciudad</label>
+        <input id="pac-ciudad" type="text" placeholder="Pedro Juan Caballero" class="input-f">
+      </div>
+      <div>
+        <label class="label-f">País</label>
+        <select id="pac-pais" class="input-f">
+          <option value="Paraguay">Paraguay</option>
+          <option value="Brasil">Brasil</option>
+          <option value="Argentina">Argentina</option>
+          <option value="Otro">Otro</option>
+        </select>
+      </div>
+      <div class="sm:col-span-2">
+        <label class="label-f">Notas / Observaciones</label>
+        <textarea id="pac-notas" rows="2" placeholder="Alergias, observaciones generales..." class="input-f resize-none"></textarea>
+      </div>
+    </div>
+    <div id="modal-error" class="hidden mx-5 mb-3 bg-red-50 border border-red-200 text-red-700 px-4 py-2 rounded-lg text-sm"></div>
+    <div class="flex gap-3 p-5 border-t justify-end">
+      <button onclick="cerrarModal()" class="px-5 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition">Cancelar</button>
+      <button onclick="guardarPaciente()" class="px-6 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-lg font-medium transition">
+        <i class="fas fa-save mr-1"></i> Guardar
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     MODAL: HISTORIA CLÍNICA
+════════════════════════════════════════════ -->
+<div id="modal-historia" class="fixed inset-0 bg-black/50 z-50 hidden flex items-start justify-center p-4 pt-8 overflow-y-auto">
+  <div class="bg-white rounded-2xl w-full max-w-3xl shadow-2xl my-4">
+    <div class="flex items-center justify-between p-5 border-b">
+      <div>
+        <h2 class="text-lg font-bold text-gray-800">Historia Clínica</h2>
+        <p id="hist-paciente-nombre" class="text-sm text-teal-600 font-medium"></p>
+      </div>
+      <div class="flex items-center gap-2">
+        <button onclick="abrirFormHistoria()"
+          class="bg-teal-600 text-white px-3 py-1.5 rounded-lg text-sm flex items-center gap-1 hover:bg-teal-700 transition">
+          <i class="fas fa-plus"></i> Nuevo registro
+        </button>
+        <button onclick="cerrarModalHistoria()" class="text-gray-400 hover:text-gray-600 text-xl ml-1">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- Formulario de nuevo registro HC -->
+    <div id="form-historia" class="hidden p-5 bg-teal-50 border-b">
+      <h3 class="font-semibold text-gray-700 mb-3 flex items-center gap-2">
+        <i class="fas fa-file-medical text-teal-600"></i>
+        <span id="hist-form-titulo">Nuevo Registro de Consulta</span>
+      </h3>
+      <input type="hidden" id="hist-id">
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div>
+          <label class="label-f">Fecha *</label>
+          <input id="hist-fecha" type="date" class="input-f">
+        </div>
+        <div>
+          <label class="label-f">Motivo de consulta *</label>
+          <input id="hist-motivo" type="text" placeholder="Ej: Dolor de cabeza, control rutinario" class="input-f">
+        </div>
+        <div class="sm:col-span-2">
+          <label class="label-f">Anamnesis</label>
+          <textarea id="hist-anamnesis" rows="2" placeholder="Historia del síntoma, antecedentes relevantes..." class="input-f resize-none"></textarea>
+        </div>
+        <div>
+          <label class="label-f">Examen físico</label>
+          <textarea id="hist-examen" rows="3" placeholder="PA, FC, hallazgos relevantes..." class="input-f resize-none"></textarea>
+        </div>
+        <div>
+          <label class="label-f">Diagnóstico</label>
+          <textarea id="hist-diagnostico" rows="3" placeholder="CIE-10 o descripción diagnóstica" class="input-f resize-none"></textarea>
+        </div>
+        <div>
+          <label class="label-f">Tratamiento / Indicaciones</label>
+          <textarea id="hist-tratamiento" rows="3" placeholder="Medicamentos, dosis, indicaciones generales..." class="input-f resize-none"></textarea>
+        </div>
+        <div>
+          <label class="label-f">Observaciones / Próxima consulta</label>
+          <textarea id="hist-obs" rows="3" placeholder="Controles, derivaciones, próxima cita..." class="input-f resize-none"></textarea>
+        </div>
+      </div>
+      <div class="flex gap-2 mt-4 justify-end">
+        <button onclick="cancelarFormHistoria()" class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 text-sm hover:bg-gray-50 transition">Cancelar</button>
+        <button onclick="guardarHistoria()" class="px-5 py-2 bg-teal-600 text-white rounded-lg text-sm font-medium hover:bg-teal-700 transition">
+          <i class="fas fa-save mr-1"></i> Guardar registro
+        </button>
+      </div>
+    </div>
+
+    <!-- Lista de registros HC -->
+    <div id="lista-historias" class="p-5 space-y-4 max-h-[500px] overflow-y-auto">
+      <div class="text-center text-gray-400 py-8">
+        <i class="fas fa-spinner fa-spin text-2xl"></i>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<style>
+  .label-f { display: block; font-size: 0.75rem; font-weight: 600; color: #374151; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.05em; }
+  .input-f { width: 100%; border: 1px solid #D1D5DB; border-radius: 0.5rem; padding: 0.6rem 0.75rem; font-size: 0.875rem; outline: none; transition: box-shadow 0.15s; }
+  .input-f:focus { box-shadow: 0 0 0 2px #0d9488; border-color: transparent; }
+</style>
+
+<script>
+  let pacienteActualId = null;
+  let timerBusqueda = null;
+
+  // ────────────────────────────────────────────────
+  //  PACIENTES
+  // ────────────────────────────────────────────────
+
+  async function cargarPacientes(buscar = '') {
+    const url = buscar ? `/api/pacientes?buscar=${encodeURIComponent(buscar)}` : '/api/pacientes?limit=100';//mod aca
+    const res = await api(url);
+    if (!res) return;
+    renderizarPacientes(await res.json());
+  }
+
+  function renderizarPacientes(lista) {
+    const el = document.getElementById('lista-pacientes');
+    if (!lista.length) {
+      el.innerHTML = `<div class="p-10 text-center text-gray-400">
+        <i class="fas fa-user-slash text-4xl mb-3 block"></i>
+        <div class="font-medium">No se encontraron pacientes</div>
+      </div>`;
+      return;
+    }
+    el.innerHTML = lista.map(p => `
+      <div class="grid grid-cols-1 md:grid-cols-5 px-5 py-4 hover:bg-gray-50 transition gap-1 md:gap-0 items-center">
+        <div class="md:col-span-2">
+          <div class="font-medium text-gray-800">${esc(p.nombre_completo)}</div>
+          <div class="text-xs text-gray-400 md:hidden mt-0.5">${esc(p.numero_documento || '—')} · ${esc(p.telefono || '—')}</div>
+        </div>
+        <div class="hidden md:block text-sm text-gray-600">${esc(p.numero_documento || '—')}</div>
+        <div class="hidden md:block text-sm text-gray-600">${esc(p.telefono || '—')}</div>
+        <div class="flex items-center justify-start md:justify-end gap-1 mt-2 md:mt-0">
+          <button onclick="verHistoria(${p.id}, '${esc(p.nombre_completo)}')"
+            title="Historia clínica"
+            class="text-blue-600 hover:bg-blue-50 text-xs px-2 py-1.5 rounded-lg transition flex items-center gap-1">
+            <i class="fas fa-notes-medical"></i><span class="hidden sm:inline">Historia</span>
+          </button>
+          <button onclick="editarPaciente(${p.id})"
+            title="Editar paciente"
+            class="text-teal-600 hover:bg-teal-50 text-xs px-2 py-1.5 rounded-lg transition">
+            <i class="fas fa-edit"></i>
+          </button>
+          <button onclick="eliminarPaciente(${p.id}, ${JSON.stringify(p.nombre_completo)})"
+            title="Eliminar"
+            class="text-red-500 hover:bg-red-50 text-xs px-2 py-1.5 rounded-lg transition">
+            <i class="fas fa-trash"></i>
+          </button>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  function buscarPacientes(v) {
+    clearTimeout(timerBusqueda);
+    timerBusqueda = setTimeout(() => cargarPacientes(v), 350);
+  }
+
+  function abrirModal() {
+    document.getElementById('modal-titulo').textContent = 'Nuevo Paciente';
+    document.getElementById('pac-id').value = '';
+    limpiarFormPac();
+    document.getElementById('modal-error').classList.add('hidden');
+    document.getElementById('modal-paciente').classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function cerrarModal() {
+    document.getElementById('modal-paciente').classList.add('hidden');
+    document.body.style.overflow = '';
+  }
+
+  function limpiarFormPac() {
+    ['pac-nombre','pac-doc','pac-fnac','pac-tel','pac-email','pac-dir','pac-ciudad','pac-notas'].forEach(id => {
+      document.getElementById(id).value = '';
+    });
+    document.getElementById('pac-tipo-doc').value = 'cedula_py';
+    document.getElementById('pac-sexo').value = '';
+    document.getElementById('pac-pais').value = 'Paraguay';
+  }
+
+  async function editarPaciente(id) {
+    const res = await api(`/api/pacientes/${id}`);
+    if (!res) return;
+    const p = await res.json();
+    document.getElementById('pac-id').value = p.id;
+    document.getElementById('pac-nombre').value = p.nombre_completo || '';
+    document.getElementById('pac-tipo-doc').value = p.tipo_documento || 'cedula_py';
+    document.getElementById('pac-doc').value = p.numero_documento || '';
+    document.getElementById('pac-fnac').value = p.fecha_nacimiento || '';
+    document.getElementById('pac-sexo').value = p.sexo || '';
+    document.getElementById('pac-tel').value = p.telefono || '';
+    document.getElementById('pac-email').value = p.correo || '';
+    document.getElementById('pac-dir').value = p.direccion || '';
+    document.getElementById('pac-ciudad').value = p.ciudad || '';
+    document.getElementById('pac-pais').value = p.pais || 'Paraguay';
+    document.getElementById('pac-notas').value = p.notas || '';
+    document.getElementById('modal-titulo').textContent = 'Editar Paciente';
+    document.getElementById('modal-error').classList.add('hidden');
+    document.getElementById('modal-paciente').classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+  }
+
+  async function guardarPaciente() {
+    const id = document.getElementById('pac-id').value;
+    const errDiv = document.getElementById('modal-error');
+    const nombre = document.getElementById('pac-nombre').value.trim();
+    if (!nombre) { mostrarError(errDiv, 'El nombre completo es obligatorio.'); return; }
+
+    const datos = {
+      nombre_completo: nombre,
+      tipo_documento: document.getElementById('pac-tipo-doc').value,
+      numero_documento: document.getElementById('pac-doc').value || null,
+      fecha_nacimiento: document.getElementById('pac-fnac').value || null,
+      sexo: document.getElementById('pac-sexo').value || null,
+      telefono: document.getElementById('pac-tel').value || null,
+      correo: document.getElementById('pac-email').value || null,
+      direccion: document.getElementById('pac-dir').value || null,
+      ciudad: document.getElementById('pac-ciudad').value || null,
+      pais: document.getElementById('pac-pais').value || 'Paraguay',
+      notas: document.getElementById('pac-notas').value || null,
+    };
+
+    const res = await api(id ? `/api/pacientes/${id}` : '/api/pacientes', {
+      method: id ? 'PUT' : 'POST',
+      body: JSON.stringify(datos),
+    });
+
+    if (res && (res.ok || res.status === 201)) {
+      cerrarModal();
+      cargarPacientes(document.getElementById('buscador').value);
+    } else if (res) {
+      const err = await res.json();
+      mostrarError(errDiv, err.detail || 'Error al guardar el paciente.');
+    }
+  }
+
+  async function eliminarPaciente(id, nombre) {
+    if (!confirm(`¿Desea eliminar al paciente "${nombre}"?\nSus datos serán archivados.`)) return;
+    const res = await api(`/api/pacientes/${id}`, { method: 'DELETE' });
+    if (res && (res.ok || res.status === 204)) cargarPacientes();
+  }
+
+  // ────────────────────────────────────────────────
+  //  HISTORIA CLÍNICA
+  // ────────────────────────────────────────────────
+
+  function verHistoria(id, nombre) {
+    pacienteActualId = id;
+    document.getElementById('hist-paciente-nombre').textContent = nombre;
+    document.getElementById('form-historia').classList.add('hidden');
+    document.getElementById('modal-historia').classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+    cargarHistorias();
+  }
+
+  function cerrarModalHistoria() {
+    document.getElementById('modal-historia').classList.add('hidden');
+    document.body.style.overflow = '';
+    pacienteActualId = null;
+  }
+
+  async function cargarHistorias() {
+    const lista = document.getElementById('lista-historias');
+    lista.innerHTML = `<div class="text-center py-8 text-gray-400"><i class="fas fa-spinner fa-spin text-2xl"></i></div>`;
+    const res = await api(`/api/historias/paciente/${pacienteActualId}`); //cambio aca de paciente a pacientes
+    if (!res) return;
+    const historias = await res.json();
+
+    if (!historias.length) {
+      lista.innerHTML = `<div class="text-center py-12 text-gray-400">
+        <i class="fas fa-file-medical text-4xl mb-3 block"></i>
+        <div class="font-medium">Sin registros de historia clínica</div>
+        <div class="text-sm mt-1">Use "Nuevo registro" para agregar la primera consulta</div>
+      </div>`;
+      return;
+    }
+
+    lista.innerHTML = historias.map(h => `
+      <div class="border border-gray-200 rounded-xl p-4 hover:border-teal-200 transition">
+        <div class="flex items-center justify-between mb-3">
+          <div class="flex items-center gap-2">
+            <span class="bg-teal-100 text-teal-700 text-xs font-bold px-2 py-1 rounded-full">${formatFecha(h.fecha)}</span>
+          </div>
+          <div class="flex gap-1">
+            <button onclick="editarHistoria(${h.id})"
+              class="text-gray-400 hover:text-teal-600 text-sm px-2 py-1 rounded hover:bg-teal-50 transition" title="Editar">
+              <i class="fas fa-edit"></i>
+            </button>
+            <button onclick="eliminarHistoria(${h.id})"
+              class="text-gray-400 hover:text-red-500 text-sm px-2 py-1 rounded hover:bg-red-50 transition" title="Eliminar">
+              <i class="fas fa-trash"></i>
+            </button>
+          </div>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+          ${campoHC('📋 Motivo de consulta', h.motivo_consulta, true)}
+          ${h.diagnostico ? campoHC('🔍 Diagnóstico', h.diagnostico) : ''}
+          ${h.tratamiento ? campoHC('💊 Tratamiento', h.tratamiento) : ''}
+          ${h.observaciones ? campoHC('📝 Observaciones', h.observaciones) : ''}
+          ${h.anamnesis ? campoHC('📖 Anamnesis', h.anamnesis, true) : ''}
+          ${h.examen_fisico ? campoHC('🩺 Examen físico', h.examen_fisico) : ''}
+        </div>
+      </div>
+    `).join('');
+  }
+
+  function campoHC(label, valor, full = false) {
+    // Si el valor es null, undefined o solo espacios, no mostrar nada
+    if (valor === null || valor === undefined || String(valor).trim() === '') return '';
+    
+    return `<div class="${full ? 'sm:col-span-2' : ''} mb-2">
+      <div class="text-[10px] text-teal-600 font-bold uppercase tracking-wider mb-0.5">${label}</div>
+      <div class="text-gray-700 leading-relaxed bg-gray-50 p-2 rounded-lg border border-gray-100">${esc(valor)}</div>
+    </div>`;
+}
+
+  function abrirFormHistoria() {
+    document.getElementById('hist-id').value = '';
+    document.getElementById('hist-form-titulo').textContent = 'Nuevo Registro de Consulta';
+    document.getElementById('hist-fecha').value = hoy();
+    ['hist-motivo','hist-anamnesis','hist-examen','hist-diagnostico','hist-tratamiento','hist-obs'].forEach(id => {
+      document.getElementById(id).value = '';
+    });
+    document.getElementById('form-historia').classList.remove('hidden');
+    document.getElementById('form-historia').scrollIntoView({ behavior: 'smooth' });
+  }
+
+  function cancelarFormHistoria() {
+    document.getElementById('form-historia').classList.add('hidden');
+  }
+
+  async function editarHistoria(id) {
+    const res = await api(`/api/historias/${id}`);
+    if (!res) return;
+    const h = await res.json();
+    document.getElementById('hist-id').value = h.id;
+    document.getElementById('hist-form-titulo').textContent = 'Editar Registro';
+    document.getElementById('hist-fecha').value = h.fecha || hoy();
+    document.getElementById('hist-motivo').value = h.motivo_consulta || '';
+    document.getElementById('hist-anamnesis').value = h.anamnesis || '';
+    document.getElementById('hist-examen').value = h.examen_fisico || '';
+    document.getElementById('hist-diagnostico').value = h.diagnostico || '';
+    document.getElementById('hist-tratamiento').value = h.tratamiento || '';
+    document.getElementById('hist-obs').value = h.observaciones || '';
+    document.getElementById('form-historia').classList.remove('hidden');
+    document.getElementById('form-historia').scrollIntoView({ behavior: 'smooth' });
+  }
+
+  async function guardarHistoria() {
+    const id = document.getElementById('hist-id').value;
+    const motivo = document.getElementById('hist-motivo').value.trim();
+    const fecha = document.getElementById('hist-fecha').value;
+    if (!motivo || !fecha) { alert('La fecha y el motivo de consulta son obligatorios.'); return; }
+
+    const datos = {
+      paciente_id: pacienteActualId,
+      fecha,
+      motivo_consulta: motivo,
+      anamnesis: document.getElementById('hist-anamnesis').value || null,
+      examen_fisico: document.getElementById('hist-examen').value || null,
+      diagnostico: document.getElementById('hist-diagnostico').value || null,
+      tratamiento: document.getElementById('hist-tratamiento').value || null,
+      observaciones: document.getElementById('hist-obs').value || null,
+    };
+
+    const res = await api(id ? `/api/historias/${id}` : '/api/historias', {
+      method: id ? 'PUT' : 'POST',
+      body: JSON.stringify(datos),
+    });
+
+    if (res && (res.ok || res.status === 201)) {
+      cancelarFormHistoria();
+      cargarHistorias();
+    } else if (res) {
+      const err = await res.json();
+      alert(err.detail || 'Error al guardar el registro.');
+    }
+  }
+
+  async function eliminarHistoria(id) {
+    if (!confirm('¿Desea eliminar este registro de historia clínica?')) return;
+    const res = await api(`/api/historias/${id}`, { method: 'DELETE' });
+    if (res && (res.ok || res.status === 204)) cargarHistorias();
+  }
+
+  // ────────────────────────────────────────────────
+  //  UTILIDADES
+  // ────────────────────────────────────────────────
+  function esc(str) {
+    if (!str) return '';
+    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  function formatFecha(f) {
+    if (!f) return '—';
+    const [y, m, d] = f.split('-');
+    const meses = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+    return `${parseInt(d)} ${meses[parseInt(m)-1]}. ${y}`;
+  }
+
+  function hoy() { return new Date().toISOString().split('T')[0]; }
+
+  function mostrarError(el, msg) {
+    el.textContent = msg;
+    el.classList.remove('hidden');
+  }
+
+  // Cerrar modales con Escape
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') {
+      cerrarModal();
+      cerrarModalHistoria();
+    }
+  });
+
+  cargarPacientes();
+</script>
+{% endblock %}
